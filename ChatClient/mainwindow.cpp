@@ -7,14 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    socket = new QUdpSocket(this);
-    connect(socket, &QUdpSocket::readyRead, [&] (){
-        QByteArray datagram;
-        datagram.resize(socket->pendingDatagramSize());
-        socket->readDatagram(datagram.data(), datagram.size());
-        ui->listWidget->addItem(QString(datagram));
-
-    });
+    socket = new QUdpSocket(this); //init socket
 }
 
 MainWindow::~MainWindow()
@@ -23,9 +16,31 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::on_pushButton_clicked()
+void MainWindow::readingData()
 {
-    socket->bind(ui->spinBox->value(), QUdpSocket::ShareAddress);
+    QHostAddress msgSender;
+    quint16 msgSenderPort;
+
+    while(socket->hasPendingDatagrams()){
+        QByteArray datagram;
+        datagram.resize(socket->pendingDatagramSize());
+        socket->readDatagram(datagram.data(), datagram.size(), &msgSender, &msgSenderPort);
+        ui->textEdit->append(QString(datagram));
+    }
+
+
 }
 
+void MainWindow::on_pushButton_clicked()
+{
+    socket->bind(QHostAddress::LocalHost, ui->sender_port->value());
+    connect(socket,SIGNAL(readyRead()),this,SLOT(readingData()));
+}
+
+void MainWindow::on_sendingButton_clicked()
+{
+    socket->writeDatagram(ui->lineEdit_3->text().toUtf8(), QHostAddress::LocalHost, ui->receiver_port->value());
+    ui->textEdit->append("Вы: " + ui->lineEdit_3->text());
+    ui->lineEdit->clear();
+}
 

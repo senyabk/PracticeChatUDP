@@ -17,8 +17,13 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+public slots:
+    void readingData();
+
 private slots:
     void on_pushButton_clicked();
+
+    void on_sendingButton_clicked();
 
 private:
     Ui::MainWindow *ui;
