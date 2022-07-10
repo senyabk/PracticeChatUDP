@@ -6,74 +6,151 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>470</width>
-    <height>332</height>
+    <width>679</width>
+    <height>334</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="layoutWidget">
+   <widget class="QWidget" name="">
     <property name="geometry">
      <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>441</width>
-      <height>257</height>
+      <x>390</x>
+      <y>10</y>
+      <width>260</width>
+      <height>272</height>
      </rect>
     </property>
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="1" column="0">
-      <widget class="QLineEdit" name="lineEdit_2">
-       <property name="text">
-        <string>Получатель</string>
-       </property>
-      </widget>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Получатель</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="receiver_port">
+         <property name="maximum">
+          <number>9999999</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
-     <item row="4" column="1">
-      <widget class="QLineEdit" name="lineEdit_3"/>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QTextEdit" name="textEdit"/>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLineEdit" name="msg_text"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="sendingButton">
+           <property name="text">
+            <string>Отправить</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </item>
-     <item row="0" column="5" rowspan="4">
-      <layout class="QVBoxLayout" name="verticalLayout_3"/>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>278</width>
+      <height>133</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="verticalLayout_5">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Пользователь</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="sender_port">
+           <property name="maximum">
+            <number>999999</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton">
+           <property name="text">
+            <string>Войти</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBox">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
-     <item row="0" column="0">
-      <widget class="QLineEdit" name="lineEdit">
-       <property name="text">
-        <string>Отправитель</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
-      <widget class="QSpinBox" name="sender_port">
-       <property name="maximum">
-        <number>999999</number>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="4">
-      <widget class="QPushButton" name="pushButton">
-       <property name="text">
-        <string>Соединить</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QSpinBox" name="receiver_port">
-       <property name="maximum">
-        <number>9999999</number>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QTextEdit" name="textEdit"/>
-     </item>
-     <item row="4" column="4">
-      <widget class="QPushButton" name="sendingButton">
-       <property name="text">
-        <string>Отправить</string>
-       </property>
-      </widget>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>Размер пакета</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="sizeSpinBox"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="sizeButton">
+           <property name="text">
+            <string>Установить</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="checkBox_2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </widget>
@@ -83,7 +160,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>470</width>
+     <width>679</width>
      <height>25</height>
     </rect>
    </property>

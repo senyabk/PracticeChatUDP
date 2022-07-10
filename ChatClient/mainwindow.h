@@ -25,8 +25,11 @@ private slots:
 
     void on_sendingButton_clicked();
 
+    void on_sizeButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QUdpSocket *socket;
+    quint64 socketSize;
 };
 #endif // MAINWINDOW_H
