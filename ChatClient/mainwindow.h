@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QSqlQuery>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -27,9 +28,16 @@ private slots:
 
     void on_sizeButton_clicked();
 
+    void on_delayButton_clicked();
+
+    void on_sendFile_clicked();
+
 private:
     Ui::MainWindow *ui;
     QUdpSocket *socket;
     quint64 socketSize;
+    quint64 delay;
+    quint64 msgID;
+
 };
 #endif // MAINWINDOW_H

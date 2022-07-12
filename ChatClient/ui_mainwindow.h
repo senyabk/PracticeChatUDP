@@ -41,6 +41,8 @@ public:
     QLineEdit *msg_text;
     QPushButton *sendingButton;
     QWidget *widget1;
+    QVBoxLayout *verticalLayout_8;
+    QVBoxLayout *verticalLayout_7;
     QVBoxLayout *verticalLayout_5;
     QVBoxLayout *verticalLayout_3;
     QHBoxLayout *horizontalLayout_3;
@@ -54,6 +56,15 @@ public:
     QSpinBox *sizeSpinBox;
     QPushButton *sizeButton;
     QCheckBox *checkBox_2;
+    QVBoxLayout *verticalLayout_6;
+    QHBoxLayout *horizontalLayout_5;
+    QLabel *label_4;
+    QSpinBox *delaySpinBox;
+    QPushButton *delayButton;
+    QCheckBox *checkBox_3;
+    QHBoxLayout *horizontalLayout_6;
+    QTextEdit *textEdit_2;
+    QPushButton *sendFile;
     QMenuBar *menubar;
     QStatusBar *statusbar;
 
@@ -61,12 +72,12 @@ public:
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
-        MainWindow->resize(679, 334);
+        MainWindow->resize(679, 374);
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
         widget = new QWidget(centralwidget);
         widget->setObjectName(QString::fromUtf8("widget"));
-        widget->setGeometry(QRect(390, 10, 260, 272));
+        widget->setGeometry(QRect(390, 10, 260, 291));
         verticalLayout_2 = new QVBoxLayout(widget);
         verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
         verticalLayout_2->setContentsMargins(0, 0, 0, 0);
@@ -113,10 +124,14 @@ public:
 
         widget1 = new QWidget(centralwidget);
         widget1->setObjectName(QString::fromUtf8("widget1"));
-        widget1->setGeometry(QRect(10, 10, 278, 133));
-        verticalLayout_5 = new QVBoxLayout(widget1);
+        widget1->setGeometry(QRect(10, 10, 340, 291));
+        verticalLayout_8 = new QVBoxLayout(widget1);
+        verticalLayout_8->setObjectName(QString::fromUtf8("verticalLayout_8"));
+        verticalLayout_8->setContentsMargins(0, 0, 0, 0);
+        verticalLayout_7 = new QVBoxLayout();
+        verticalLayout_7->setObjectName(QString::fromUtf8("verticalLayout_7"));
+        verticalLayout_5 = new QVBoxLayout();
         verticalLayout_5->setObjectName(QString::fromUtf8("verticalLayout_5"));
-        verticalLayout_5->setContentsMargins(0, 0, 0, 0);
         verticalLayout_3 = new QVBoxLayout();
         verticalLayout_3->setObjectName(QString::fromUtf8("verticalLayout_3"));
         horizontalLayout_3 = new QHBoxLayout();
@@ -161,6 +176,7 @@ public:
 
         sizeSpinBox = new QSpinBox(widget1);
         sizeSpinBox->setObjectName(QString::fromUtf8("sizeSpinBox"));
+        sizeSpinBox->setMaximum(999999999);
 
         horizontalLayout_4->addWidget(sizeSpinBox);
 
@@ -180,6 +196,59 @@ public:
 
 
         verticalLayout_5->addLayout(verticalLayout_4);
+
+
+        verticalLayout_7->addLayout(verticalLayout_5);
+
+        verticalLayout_6 = new QVBoxLayout();
+        verticalLayout_6->setObjectName(QString::fromUtf8("verticalLayout_6"));
+        horizontalLayout_5 = new QHBoxLayout();
+        horizontalLayout_5->setObjectName(QString::fromUtf8("horizontalLayout_5"));
+        label_4 = new QLabel(widget1);
+        label_4->setObjectName(QString::fromUtf8("label_4"));
+
+        horizontalLayout_5->addWidget(label_4);
+
+        delaySpinBox = new QSpinBox(widget1);
+        delaySpinBox->setObjectName(QString::fromUtf8("delaySpinBox"));
+        delaySpinBox->setMaximum(999999999);
+
+        horizontalLayout_5->addWidget(delaySpinBox);
+
+        delayButton = new QPushButton(widget1);
+        delayButton->setObjectName(QString::fromUtf8("delayButton"));
+
+        horizontalLayout_5->addWidget(delayButton);
+
+
+        verticalLayout_6->addLayout(horizontalLayout_5);
+
+        checkBox_3 = new QCheckBox(widget1);
+        checkBox_3->setObjectName(QString::fromUtf8("checkBox_3"));
+        checkBox_3->setEnabled(false);
+
+        verticalLayout_6->addWidget(checkBox_3);
+
+
+        verticalLayout_7->addLayout(verticalLayout_6);
+
+
+        verticalLayout_8->addLayout(verticalLayout_7);
+
+        horizontalLayout_6 = new QHBoxLayout();
+        horizontalLayout_6->setObjectName(QString::fromUtf8("horizontalLayout_6"));
+        textEdit_2 = new QTextEdit(widget1);
+        textEdit_2->setObjectName(QString::fromUtf8("textEdit_2"));
+
+        horizontalLayout_6->addWidget(textEdit_2);
+
+        sendFile = new QPushButton(widget1);
+        sendFile->setObjectName(QString::fromUtf8("sendFile"));
+
+        horizontalLayout_6->addWidget(sendFile);
+
+
+        verticalLayout_8->addLayout(horizontalLayout_6);
 
         MainWindow->setCentralWidget(centralwidget);
         menubar = new QMenuBar(MainWindow);
@@ -206,6 +275,10 @@ public:
         label_3->setText(QCoreApplication::translate("MainWindow", "\320\240\320\260\320\267\320\274\320\265\321\200 \320\277\320\260\320\272\320\265\321\202\320\260", nullptr));
         sizeButton->setText(QCoreApplication::translate("MainWindow", "\320\243\321\201\321\202\320\260\320\275\320\276\320\262\320\270\321\202\321\214", nullptr));
         checkBox_2->setText(QString());
+        label_4->setText(QCoreApplication::translate("MainWindow", "\320\227\320\260\320\264\320\265\321\200\320\266\320\272\320\260 \320\277\320\260\320\272\320\265\321\202\320\276\320\262", nullptr));
+        delayButton->setText(QCoreApplication::translate("MainWindow", "\320\243\321\201\321\202\320\260\320\275\320\276\320\262\320\270\321\202\321\214", nullptr));
+        checkBox_3->setText(QString());
+        sendFile->setText(QCoreApplication::translate("MainWindow", "\320\236\321\202\320\277\321\200\320\260\320\262\320\270\321\202\321\214 \321\204\320\260\320\271\320\273", nullptr));
     } // retranslateUi
 
 };
