@@ -13,7 +13,10 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    socket = new QUdpSocket(this); //init socket
+    ui->msg_text->setReadOnly(true);
+    ui->sendingButton->setDisabled(true);
+    ui->requestButton->setDisabled(true);
+    socket = new QUdpSocket(this); //init socket    
 }
 
 MainWindow::~MainWindow()
@@ -22,16 +25,16 @@ MainWindow::~MainWindow()
 }
 
 
-void MainWindow::readingData() //чтение сообщения
+void MainWindow::readingData() // чтение сообщения (файла, квитанции о доставке)
 {
     QHostAddress msgSender; //aдрес отправителя
     quint16 msgSenderPort; //порт отправителя
     qint16 fileFlag = 0; //проверка передачи файла
-    QByteArray fileName;
+    QByteArray fileName, fileSuffix;
 
     while(socket->hasPendingDatagrams()){
         QByteArray datagram, delivered, receivedData, fullData;
-        quint64 socketsNumber = 0, buf = 0, msg_id = 0, metaData;
+        quint64 socketsNumber = 0, buf = 0, msg_id, metaData;
         qint64 fileSize;
         QFile file;
         datagram.resize(socket->pendingDatagramSize());
@@ -42,6 +45,8 @@ void MainWindow::readingData() //чтение сообщения
                 ui->textEdit->append("Ошибка, пакетов не доставлено: "
                                      + QString::number(socketsNumber - buf)
                                      + " из " + QString::number(socketsNumber));
+
+                 ui->requestButton->setEnabled(true); //при ошибке сообщение запрашивается из БД
             }
 
             socket->readDatagram(datagram.data(), datagram.size(), &msgSender, &msgSenderPort); //чтение датаграммы
@@ -66,14 +71,16 @@ void MainWindow::readingData() //чтение сообщения
                     stream >> msg_id;
                     stream >> receivedData;
                     fullData += receivedData;
+                    reqID = msg_id;
                     buf++;
                     break;
                 //чтение файла
                 case 1:
                     stream >> fileName;
+                    stream >> fileSuffix;
                     stream >> receivedData;
                     stream >> fileSize;
-                    file.setFileName(fileName);
+                    file.setFileName(fileName + "." + fileSuffix);
                     if(file.open(QFile::Append)) {
                         QTextStream writeStream(&file);
                         writeStream << receivedData;
@@ -86,13 +93,9 @@ void MainWindow::readingData() //чтение сообщения
                     stream >> msg_id;
 
                     ui->textEdit->append("Сообщение " + QString::number(msg_id) + " доставлено");
-
                     QSqlQuery query;
-                    query.prepare("UPDATE messages SET delivery_status = :del_stat WHERE sender_address = '127.0.0.1'"
-                                  "AND sender_port = :sp AND message_id = :msg_id");
+                    query.prepare("UPDATE messages SET delivery_status = :del_stat WHERE id = :msg_id");
                     query.bindValue(":del_stat", "Delivered");
-                    //query.bindValue(":sender_address", "");
-                    query.bindValue(":sp", ui->sender_port->value());
                     query.bindValue(":msg_id", msg_id);
                     query.exec();
 
@@ -108,50 +111,55 @@ void MainWindow::readingData() //чтение сообщения
             delivered_stream << del_meta;
             delivered_stream << msg_id;
 
+            ui->textEdit->append("От " + QString::number(msgSenderPort) + ": " + QString(fullData));
+            //ui->textEdit->append("Пакетов: " + QString::number(socketsNumber));
+
             socket->writeDatagram(delivered, QHostAddress::LocalHost, msgSenderPort);
             Sleep(delay);
 
-            ui->textEdit->append("От " + QString::number(msgSenderPort) + ": " + QString(fullData));
-            ui->textEdit->append("Пакетов: " + QString::number(socketsNumber));
         }
     }
     if (fileFlag == 1){
-        ui->textEdit_2->append("Получен файл " + fileName);
+                ui->textEdit->append("Получен файл " + fileName + "." + fileSuffix);
     }
 
 }
 
-void MainWindow::on_pushButton_clicked() //авторизация (в данном случае, задание хоста)
+void MainWindow::on_pushButton_clicked() // авторизация (в данном случае, задание хоста)
 {
     socket->bind(QHostAddress::LocalHost, ui->sender_port->value());
     ui->checkBox->setChecked(true);
     ui->checkBox->setText("Пользователь: " + ui->sender_port->text());
-    msgID = 0;
 
     //Вывод истории сообщений
-    bool flag = false;
     QSqlQuery query;
-    query.prepare("SELECT message, message_id, receiver_port FROM messages "
-                  "WHERE sender_address = '127.0.0.1' AND sender_port = :sp");
+    query.prepare("SELECT id, message, sender_port, receiver_port, delivery_status FROM messages "
+                  "WHERE sender_address = '127.0.0.1' AND (sender_port = :sp OR receiver_port = :sp)");
     //query.bindValue(":sender_address",);
     query.bindValue(":sp", ui->sender_port->value());
     query.exec();
 
     while (query.next()){
-        QString message = query.value(0).toString();
-        quint64 msg_id = query.value(1).toInt();
-        quint64 rec_port = query.value(2).toInt();
-        ui->textEdit->append("Вы->" + QString::number(rec_port) + ": " + message + " (" + QString::number(msg_id) + ")");
-        if (msg_id > msgID) msgID = msg_id;
-        flag = true;
+        quint64 msg_id = query.value(0).toInt();
+        QString message = query.value(1).toString();
+        quint64 send_port = query.value(2).toInt();
+        quint64 rec_port = query.value(3).toInt();
+        QString status = query.value(4).toString();
+        if (rec_port == ui->sender_port->value() && status == "Delivered"){
+            ui->textEdit->append("От " + QString::number(send_port) + ": " + message);
+        }else if (send_port == ui->sender_port->value()){
+            ui->textEdit->append("Вы->" + QString::number(rec_port) + ": " + message + " (" + QString::number(msg_id) + " " + status + ")");
+
+        }
     }
 
-    if (flag) msgID++;
-
     connect(socket, SIGNAL(readyRead()), this, SLOT(readingData()));
+
+    ui->msg_text->setReadOnly(false);
+    ui->sendingButton->setDisabled(false);
 }
 
-void MainWindow::on_sendingButton_clicked() //отправка сообщения
+void MainWindow::on_sendingButton_clicked() // отправка сообщения по нажатию кнопки
 {
 // Отправка одним пакетом
 //    socket->writeDatagram(ui->msg_text->text().toUtf8(), QHostAddress::LocalHost, ui->receiver_port->value());
@@ -160,6 +168,20 @@ void MainWindow::on_sendingButton_clicked() //отправка сообщени�
 
     QByteArray data = ui->msg_text->text().toUtf8();
     const quint64 fullDataSize = data.size();
+
+    //Запрос для добавления сообщения в БД
+    QSqlQuery query;
+    query.prepare("INSERT INTO MESSAGES (sender_port,  receiver_port, "
+                                        "message, delivery_status) "
+              "VALUES (:sp, :rp, :msg, :dstat) RETURNING id");
+    query.bindValue(":sp", ui->sender_port->value());
+    query.bindValue(":rp", ui->receiver_port->value());
+    query.bindValue(":msg", ui->msg_text->text());
+    query.bindValue(":dstat", "Created");
+    query.exec();
+    query.next();
+
+    quint64 msg_id = query.value(0).toInt();
 
     //разделение на пакеты заданного размера
     while (data.size() > 0)
@@ -170,7 +192,7 @@ void MainWindow::on_sendingButton_clicked() //отправка сообщени�
         QDataStream stream(&datagram, QIODevice::WriteOnly);
         stream << metaData;
         (fullDataSize % socketSize > 0) ? stream << fullDataSize/socketSize + 1: stream << fullDataSize/socketSize;
-        stream << msgID;
+        stream << msg_id;
         stream << sendingData;
 
         socket->writeDatagram(datagram, QHostAddress::LocalHost, ui->receiver_port->value());
@@ -178,44 +200,34 @@ void MainWindow::on_sendingButton_clicked() //отправка сообщени�
         data.remove(0, sendingData.size());
     }
 
-    //Запрос для добавления сообщения в БД
-    QSqlQuery query;
-    query.prepare("INSERT INTO MESSAGES (sender_port,  receiver_port, "
-                                        "message, message_id, delivery_status) "
-              "VALUES (:sp, :rp, :msg, :msg_id, :dstat)");
-    query.bindValue(":sp", ui->sender_port->value());
-    query.bindValue(":rp", ui->receiver_port->value());
-    query.bindValue(":msg", ui->msg_text->text());
-    query.bindValue(":msg_id", msgID);
-    query.bindValue(":dstat", "Send");
+    query.prepare("UPDATE messages SET delivery_status = :del_stat WHERE id = :msg_id");
+    query.bindValue(":del_stat", "Send");
+    query.bindValue(":msg_id", msg_id);
     query.exec();
 
-    ui->textEdit->append("Вы: " + ui->msg_text->text() + " (" + QString::number(msgID) + ")");
-    msgID++;
+    ui->textEdit->append("Вы: " + ui->msg_text->text() + " (id: " + QString::number(msg_id) + ")");
     ui->msg_text->clear();
 }
 
-
-void MainWindow::on_sizeButton_clicked() //установка размера пакетов
+void MainWindow::on_sizeButton_clicked() // установка размера пакетов
 {
     socketSize = ui->sizeSpinBox->value();
     ui->checkBox_2->setChecked(true);
     ui->checkBox_2->setText("Пакет: " + QString::number(socketSize) + " байт");
 }
 
-
-void MainWindow::on_delayButton_clicked() //установка задержки
+void MainWindow::on_delayButton_clicked() // установка задержки
 {
     delay = ui->delaySpinBox->value();
     ui->checkBox_3->setChecked(true);
     ui->checkBox_3->setText("Задержка: " + QString::number(delay) + " мс");
 }
 
-
-void MainWindow::on_sendFile_clicked() //отправка файла
+void MainWindow::on_sendFile_clicked() // отправка файла
 {
     QString fileName = QFileDialog::getOpenFileName(this, "File send", "C://");
     QFile file(fileName);
+    QFileInfo fi(fileName);
     if(file.open(QFile::ReadOnly)) {
             qint64 raw_size = 0;
             char raw_data[socketSize];
@@ -225,7 +237,8 @@ void MainWindow::on_sendFile_clicked() //отправка файла
 
                 QDataStream stream(&datagram, QIODevice::WriteOnly);
                 stream << metaData;
-                stream << fileName.toUtf8();
+                stream << fi.baseName().toUtf8();
+                stream << fi.completeSuffix().toUtf8();
                 stream << sendingData;
                 stream << file.size();
                 socket->writeDatagram(datagram, QHostAddress::LocalHost, ui->receiver_port->value());
@@ -235,3 +248,39 @@ void MainWindow::on_sendFile_clicked() //отправка файла
         QMessageBox::information(this, "Info", "Файл " + fileName + " отправлен");
     }
 }
+
+void MainWindow::on_msg_text_returnPressed() // отправка сообщению по Enter
+{
+    ui->sendingButton->click();
+}
+
+void MainWindow::on_requestButton_clicked()
+{
+    //Вывод истории сообщений
+    QSqlQuery query;
+    query.prepare("SELECT message, sender_port FROM messages "
+                  "WHERE id = :reqID AND delivery_status = :del_stat");
+    query.bindValue(":reqID", reqID);
+    query.bindValue(":del_stat", "Send");
+    query.exec();
+
+    if (query.next())
+    {
+        QString message = query.value(0).toString();
+        quint64 send_port = query.value(1).toInt();
+
+        ui->textEdit->append("От " + QString::number(send_port) + ": " + message);
+
+        query.prepare("UPDATE messages SET delivery_status = :del_stat WHERE id = :msg_id");
+        query.bindValue(":del_stat", "Delivered");
+        query.bindValue(":msg_id", reqID);
+        query.exec();
+    } else
+    {
+        QMessageBox::information(this, "Info", "Не удалось дозапросить");
+    }
+
+    ui->requestButton->setDisabled(true);
+
+}
+

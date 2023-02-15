@@ -32,12 +32,16 @@ private slots:
 
     void on_sendFile_clicked();
 
+    void on_msg_text_returnPressed();
+
+    void on_requestButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QUdpSocket *socket;
     quint64 socketSize;
     quint64 delay;
-    quint64 msgID;
+    quint64 reqID;
 
 };
 #endif // MAINWINDOW_H
