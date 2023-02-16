@@ -37,7 +37,9 @@
 
 
 "dbconnect.h" - подключение к БД
-"mainwindow.cpp" - основные функции
+"mainwindow.cpp(h)" - основные функции
+"sendworker.cpp(h)" - класс для отправки сообщения в отдельном потоке
+
 
 Qt 5.15.2 (MinGW 64bit)
 PostgreSQL 14.4
