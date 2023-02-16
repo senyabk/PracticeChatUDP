@@ -10,11 +10,13 @@ CONFIG += c++17
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    sendworker.cpp
 
 HEADERS += \
     dbconnect.h \
-    mainwindow.h
+    mainwindow.h \
+    sendworker.h
 
 FORMS += \
     mainwindow.ui

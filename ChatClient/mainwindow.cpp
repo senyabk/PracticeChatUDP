@@ -1,12 +1,6 @@
 ﻿#include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "windows.h"
-#include "dbconnect.h"
 
-#include <QUdpSocket>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QFileDevice>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -16,7 +10,23 @@ MainWindow::MainWindow(QWidget *parent)
     ui->msg_text->setReadOnly(true);
     ui->sendingButton->setDisabled(true);
     ui->requestButton->setDisabled(true);
-    socket = new QUdpSocket(this); //init socket    
+
+    //sendThread = new QThread(this);
+    //connect(this, SIGNAL(destroyed()), sendThread, SLOT(quit()));
+
+    // Создание объекта для потока
+    sendWorker = new SendWorker();
+    connect(this, SIGNAL(destroyed()), sendWorker, SLOT(quit()));
+
+    socket = new QUdpSocket(this); //init socket
+
+    //connect(this, SIGNAL(startSending(QByteArray,quint64,QUdpSocket&,quint64,quint64,quint64)),
+      //      sendWorker, SLOT(runSending(QByteArray,quint64,QUdpSocket&,quint64,quint64,quint64)));
+
+    // Перенос объекта в свой поток
+    sendWorker->moveToThread(sendWorker);
+
+    //sendWorker->start();
 }
 
 MainWindow::~MainWindow()
@@ -167,7 +177,6 @@ void MainWindow::on_sendingButton_clicked() // отправка сообщени
 //    ui->lineEdit->clear();
 
     QByteArray data = ui->msg_text->text().toUtf8();
-    const quint64 fullDataSize = data.size();
 
     //Запрос для добавления сообщения в БД
     QSqlQuery query;
@@ -181,31 +190,28 @@ void MainWindow::on_sendingButton_clicked() // отправка сообщени
     query.exec();
     query.next();
 
-    quint64 msg_id = query.value(0).toInt();
+    quint64 msgID = query.value(0).toInt();
 
-    //разделение на пакеты заданного размера
-    while (data.size() > 0)
-    {
-        QByteArray sendingData = data.left(socketSize), datagram;
-        quint64 metaData = 0;
+    //emit startSending(data, msgID, *socket, socketSize, ui->receiver_port->value(), delay);
 
-        QDataStream stream(&datagram, QIODevice::WriteOnly);
-        stream << metaData;
-        (fullDataSize % socketSize > 0) ? stream << fullDataSize/socketSize + 1: stream << fullDataSize/socketSize;
-        stream << msg_id;
-        stream << sendingData;
+    qDebug() << QThread::currentThreadId();;
 
-        socket->writeDatagram(datagram, QHostAddress::LocalHost, ui->receiver_port->value());
-        Sleep(delay);
-        data.remove(0, sendingData.size());
-    }
+    // Запуск потока
+    sendWorker->data = data;
+    sendWorker->msgID = msgID;
+    sendWorker->socket = socket;
+    sendWorker->socketSize = socketSize;
+    sendWorker->recPort = ui->receiver_port->value();
+    sendWorker->delay = delay;
+    sendWorker->start();
+
 
     query.prepare("UPDATE messages SET delivery_status = :del_stat WHERE id = :msg_id");
     query.bindValue(":del_stat", "Send");
-    query.bindValue(":msg_id", msg_id);
+    query.bindValue(":msg_id", msgID);
     query.exec();
 
-    ui->textEdit->append("Вы: " + ui->msg_text->text() + " (id: " + QString::number(msg_id) + ")");
+    ui->textEdit->append("Вы: " + ui->msg_text->text() + " (id: " + QString::number(msgID) + ")");
     ui->msg_text->clear();
 }
 
@@ -283,4 +289,5 @@ void MainWindow::on_requestButton_clicked()
     ui->requestButton->setDisabled(true);
 
 }
+
 
