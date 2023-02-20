@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 #include "windows.h"
 #include "sendworker.h"
+#include "filesendworker.h"
 
 #include <QUdpSocket>
 #include <QFileDialog>
@@ -28,9 +29,6 @@ public:
 public slots:
     void readingData();
 
-signals:
-    void startSending(QByteArray data, quint64 msgID, QUdpSocket &socket, quint64 socketSize, quint64 recPort, quint64 delay);
-
 private slots:
     void on_pushButton_clicked();
 
@@ -50,6 +48,7 @@ private:
     Ui::MainWindow *ui;
     QUdpSocket *socket;
     SendWorker *sendWorker;
+    FileSendWorker *fileSendWorker;
     QThread *sendThread;
     quint64 socketSize;
     quint64 delay;

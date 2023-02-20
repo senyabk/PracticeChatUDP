@@ -18,6 +18,9 @@ MainWindow::MainWindow(QWidget *parent)
     sendWorker = new SendWorker();
     connect(this, SIGNAL(destroyed()), sendWorker, SLOT(quit()));
 
+    fileSendWorker = new FileSendWorker();
+    connect(this, SIGNAL(destroyed()), fileSendWorker, SLOT(quit()));
+
     socket = new QUdpSocket(this); //init socket
 
     //connect(this, SIGNAL(startSending(QByteArray,quint64,QUdpSocket&,quint64,quint64,quint64)),
@@ -25,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Перенос объекта в свой поток
     sendWorker->moveToThread(sendWorker);
+    fileSendWorker->moveToThread(fileSendWorker);
 
     //sendWorker->start();
 }
@@ -40,11 +44,12 @@ void MainWindow::readingData() // чтение сообщения (файла, �
     QHostAddress msgSender; //aдрес отправителя
     quint16 msgSenderPort; //порт отправителя
     qint16 fileFlag = 0; //проверка передачи файла
-    QByteArray fileName, fileSuffix;
+    quint64 msg_id;
+    QByteArray fileName, fileSuffix, delivered, fullData;
 
     while(socket->hasPendingDatagrams()){
-        QByteArray datagram, delivered, receivedData, fullData;
-        quint64 socketsNumber = 0, buf = 0, msg_id, metaData;
+        QByteArray datagram, receivedData;
+        quint64 socketsNumber = 0, buf = 0, metaData;
         qint64 fileSize;
         QFile file;
         datagram.resize(socket->pendingDatagramSize());
@@ -99,7 +104,14 @@ void MainWindow::readingData() // чтение сообщения (файла, �
                     }
                     break;
                  //чтение сообщения о доставке
-                 case 2:
+                case 2:
+                    stream >> fileName;
+
+                    ui->textEdit->append("Файл " + fileName + " доставлен");
+
+                    fileFlag = -1;
+                    break;
+                case 3:
                     stream >> msg_id;
 
                     ui->textEdit->append("Сообщение " + QString::number(msg_id) + " доставлено");
@@ -111,26 +123,36 @@ void MainWindow::readingData() // чтение сообщения (файла, �
 
                     fileFlag = -1;
                     break;
+
+
             }
         }while(buf != socketsNumber); //в случае не с обычными сообщениями они изначально равны
 
-        //если обычное сообщение, вывод на экран + квитанция о доставке
-        if (fileFlag == 0){
-            quint64 del_meta = 2;
-            QDataStream delivered_stream(&delivered, QIODevice::WriteOnly);
-            delivered_stream << del_meta;
-            delivered_stream << msg_id;
 
-            ui->textEdit->append("От " + QString::number(msgSenderPort) + ": " + QString(fullData));
-            //ui->textEdit->append("Пакетов: " + QString::number(socketsNumber));
-
-            socket->writeDatagram(delivered, QHostAddress::LocalHost, msgSenderPort);
-            Sleep(delay);
-
-        }
     }
-    if (fileFlag == 1){
-                ui->textEdit->append("Получен файл " + fileName + "." + fileSuffix);
+    if (fileFlag == 0){
+        quint64 del_meta = 3;
+        QDataStream delivered_stream(&delivered, QIODevice::WriteOnly);
+        delivered_stream << del_meta;
+        delivered_stream << msg_id;
+
+        ui->textEdit->append("От " + QString::number(msgSenderPort) + ": " + QString(fullData));
+        //ui->textEdit->append("Пакетов: " + QString::number(socketsNumber));
+
+        socket->writeDatagram(delivered, QHostAddress::LocalHost, msgSenderPort);
+        Sleep(delay);
+
+    }else if (fileFlag == 1){
+        quint64 del_meta = 2;
+        QDataStream delivered_stream(&delivered, QIODevice::WriteOnly);
+        delivered_stream << del_meta;
+        delivered_stream << fileName + "." + fileSuffix;
+
+        ui->textEdit->append("Получен файл " + fileName + "." + fileSuffix);
+
+        socket->writeDatagram(delivered, QHostAddress::LocalHost, msgSenderPort);
+        Sleep(delay);
+
     }
 
 }
@@ -232,24 +254,17 @@ void MainWindow::on_delayButton_clicked() // установка задержки
 void MainWindow::on_sendFile_clicked() // отправка файла
 {
     QString fileName = QFileDialog::getOpenFileName(this, "File send", "C://");
-    QFile file(fileName);
-    QFileInfo fi(fileName);
-    if(file.open(QFile::ReadOnly)) {
-            qint64 raw_size = 0;
-            char raw_data[socketSize];
-            quint64 metaData = 1;
-            while((raw_size = file.read(raw_data, socketSize)) > 0) {
-                QByteArray sendingData = QByteArray::fromRawData(raw_data, raw_size), datagram;
 
-                QDataStream stream(&datagram, QIODevice::WriteOnly);
-                stream << metaData;
-                stream << fi.baseName().toUtf8();
-                stream << fi.completeSuffix().toUtf8();
-                stream << sendingData;
-                stream << file.size();
-                socket->writeDatagram(datagram, QHostAddress::LocalHost, ui->receiver_port->value());
-            }
-        }
+    qDebug() << QThread::currentThreadId();;
+
+    // Запуск потока
+    fileSendWorker->fileName = fileName;
+    fileSendWorker->socketSize = socketSize;
+    fileSendWorker->socket = socket;
+    fileSendWorker->recPort = ui->receiver_port->value();
+    fileSendWorker->start();
+
+
     if (!fileName.isEmpty()){
         QMessageBox::information(this, "Info", "Файл " + fileName + " отправлен");
     }
